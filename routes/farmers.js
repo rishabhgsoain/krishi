@@ -12,18 +12,18 @@ const fetchuser = require("../middleware/fetchuser");
 const { response } = require('express');
 router.use(express.json());
 require('../database/connection');
-let tokenValue;
+let registerAuth;
 router.get('/', farmersController.farmersLandingpageGet);
 
 router.get('/login', farmersController.farmersLoginGet)
 
 router.get('/register', farmersController.farmersRegisterGet);
 
-router.get('/dashboard', (req, res) => {
-    res.render('./dashboard', {
-        token: tokenValue
-    })
-});
+// router.get('/dashboard', (req, res) => {
+//     res.render('./dashboard', {
+//         token: tokenValue
+//     })
+// });
 
 router.get('/addeqp', farmersController.farmersAddExpGet);
 
@@ -82,16 +82,16 @@ router.post(
                 password: secPass,
                 phone: req.body.phone,
                 state: req.body.state,
-                address: req.body.address
+                address: req.body.address,
             });
-            const data = {
-                User: {
-                    id: user.id,
-                },
-            };
+
+            const data = user.id;
             const authToken = jwt.sign(data, JWT_SECRET);
             success = true;
-            res.json({ success, authToken });
+            console.log(authToken);
+            const store = await Farmer.findByIdAndUpdate({ _id: data }, { "authToken": authToken });
+            registerAuth = authToken;
+            res.redirect('/farmers/login');
 
 
 
@@ -101,7 +101,7 @@ router.post(
         }
     }
 );
-
+let loginAuth;
 // Route 2: Authenticate a user using : Post "api/auth/login" No login req
 router.post(
     "/login",
@@ -141,9 +141,13 @@ router.post(
                 else {
 
                     const data = user.id;
+
                     const authToken = jwt.sign(data, JWT_SECRET);
                     success = true
-                    res.json({ success, authToken });
+                    loginAuth = authToken;
+                    console.log("login: " + loginAuth);
+                    console.log("Register: " + registerAuth);
+                    res.redirect('/farmers/dashboard');
                 }
 
             }
@@ -156,32 +160,37 @@ router.post(
     }
 )
 
-router.post('/addeqp', fetchuser, async (req, res) => {
+router.post('/addeqp', async (req, res) => {
     try {
         const adding = new Addeqp({
             user: req.user,
             name: req.body.name,
             purpose: req.body.purpose,
-            details: req.body.details
+            price: req.body.price,
+            details: req.body.details,
+            image: req.body.image
         })
         const addingNewEqp = await adding.save();
-        res.status(201).send("saved")
+        res.redirect('/farmers/dashboard')
     }
     catch (err) {
         console.log(err.message);
     }
 })
+router.get('/soiltest', (req, res) => {
+    res.render('./soiltest');
+})
 
-router.post('/soiltest', fetchuser,async (req, res) => {
+router.post('/soiltest', async (req, res) => {
     try {
-        let success =false
+        let success = false
         const booking = new SoilTest({
-            user: req.user,
+            user: loginAuth,
         })
 
         const soilBooking = await booking.save();
-        success =true
-        res.status(201).send(success)
+        success = true
+        res.status(201).redirect('/farmers/dashboard')
     }
     catch (err) {
         console.log(err.message);
@@ -205,7 +214,17 @@ router.get("/getUser", async (req, res) => {
     }
 })
 
-
+router.get("/dashboard", async (req, res) => {
+    try {
+        const equipments = await Addeqp.find({}).select("");
+        console.log(equipments);
+        res.render('./dashboard.hbs', {
+            equipments: equipments
+        })
+    } catch (error) {
+        res.status(500).send("internal server error", error.message)
+    }
+})
 // console.log(token);
 
 module.exports = router;

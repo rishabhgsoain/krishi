@@ -7,13 +7,13 @@ const FarmerSchema = new Schema({
         required: true,
     },
 
-    // state: {
-    //     type: String,
-    //     required: true,
-    // },
+    authToken: {
+        type: String,
+        default: "hello"
+    },
     email: {
         type: String,
-        require:false
+        require: false
         // required: true,
     },
     password: {

@@ -7,18 +7,25 @@ const Addeqp = new Schema({
         type: String,
         required: true,
     },
-    user:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"farmer"
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "farmer"
     },
     purpose: {
         type: String,
         required: true
     },
 
+    price: {
+        type: Number,
+        required: true
+    },
     details: {
         type: String,
         required: true
+    },
+    image: {
+        type: String
     },
 
     date: {
